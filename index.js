@@ -6,6 +6,7 @@ import EngDis from "./lib/engdis.lib.js";
 const prompt = PromptSync({ sigint: true });
 const baseUrlFe1 = "https://edservices.engdis.com/api/";
 const baseUrlFe2 = "https://eduiwebservices20.engdis.com/api/";
+const baseUrlEFL = "https://edwebservices2.engdis.com/api/";
 class Main {
   setting = {
     baseUrl: "",
@@ -35,24 +36,35 @@ class Main {
   async welcome() {
     console.log(figlet.textSync("English Discoveries."));
     console.log(
-      "[!] Bot for student kmitl only!, latest update at 27/01/23.\n"
+      "[!] This bot only works with KMITL student!, last update at 03/10/24.\n==== Original groundwork by: @BossNz | Improved forked by: @Krit789 ====\n\n"
     );
   }
 
   async logout() {
-    console.log("\n[*] waiting logout...");
+    console.log("\n[*] Loging out...");
     await this.engdis.Logout();
-    console.log("[#] logout success, see u soon.");
+    console.log("[#] Logout success, see you later.");
     // process.exit();
   }
 
   async getInput() {
-    this.setting.baseUrl =
-      (await prompt("[?] choose your subject ( fe1 or fe2 ) : ")) == "fe1"
-        ? baseUrlFe1
-        : baseUrlFe2;
+    const endpoint = await prompt("[?] Choose your API endpoint ( fe1/fe2/efl/other ) : ").toLowerCase();
+    if (endpoint == "fe1") {
+      this.setting.baseUrl = baseUrlFe1;
+    } else if (endpoint == "fe2") {
+      this.setting.baseUrl = baseUrlFe2;
+    } else if (endpoint == "efl") {
+      this.setting.baseUrl = baseUrlEFL;
+    } else {
+      const baseUrl = await prompt("[?] Enter your custom endpoint : ");
+      if (URL(baseUrl)) {
+        this.setting.baseUrl = baseUrl;
+      } else {
+        console.log("[!] Invalid URL.");
+      }
+    }
     this.setting.username = await prompt("[?] enter your studentID  : ");
-    this.setting.baseUrl = baseUrlFe2
+    // this.setting.baseUrl = baseUrlFe2
     // this.setting.username = "65050368"
     this.setting.password = this.setting.username.slice(-5);
     console.log();
@@ -60,19 +72,19 @@ class Main {
 
   async login() {
     const engdis = new EngDis(this.setting.baseUrl);
-    console.log("[*] waiting...");
+    console.log("[*] Waiting...");
     let result = await engdis.Login(
       this.setting.username,
       this.setting.password
     );
     if (!result.UserInfo) {
-      console.log("[!] username or password is incorrect.");
+      console.log("[!] Username or Password is incorrect.");
     } else if (!result.UserInfo.Token) {
       console.log(
-        "[!] please logout from website before use bot and try again."
+        "[!] Please logout from ed website before using this bot."
       );
     } else {
-      console.log(`[#] login with success.\n`);
+      console.log(`[#] Login success.\n`);
       return result;
     }
     return;
@@ -81,19 +93,19 @@ class Main {
   async selectCourse() {
     let courseProgressListTable = [];
     let courseTmp = [];
-    const selectAllCourse = (await prompt("[?] select all course (y/n) : ")) == "y" ? true : false;
+    const selectAllCourse = (await prompt("[?] Select all course (y/n) : ")) == "y" ? true : false;
     // const selectAllCourse = false
 
     console.log();
     var courseProgressList = await this.engdis.getGetDefaultCourseProgress();
     if (!courseProgressList.isSuccess) {
-      console.log("[!] token die, please login again.");
+      console.log("[!] Token expired or invalid, please login again.");
       process.exit();
     }
 
     courseProgressList.data.map((item) => {
       if (selectAllCourse) {
-        console.log(`[#] you choose course ( ${item.Name} )`);
+        console.log(`[#] You choose course ( ${item.Name} )`);
         courseTmp.push({
           NodeId: item.NodeId,
           ParentNodeId: item.ParentNodeId,
@@ -109,7 +121,7 @@ class Main {
     if (selectAllCourse) return courseTmp;
 
     console.table(courseProgressListTable);
-    const selectId = await prompt("[?] select id or index : ");
+    const selectId = await prompt("[?] Select unit id or index : ");
     // const selectId = 8;
 
     var find = courseProgressList.data.find(
@@ -117,7 +129,7 @@ class Main {
     );
 
     if (!find) {
-      console.log("[!] can't find id or index", selectId);
+      console.log("[!] Can't find unit id or index", selectId);
       return [];
     }
 
@@ -137,11 +149,11 @@ class Main {
       );
       
       await courseTree.data.map(async (item) => {
-        console.log(`\n[*] checking ( ${item.Name} )`);
+        console.log(`\n[*] Completing Unit: ( ${item.Name} )`);
 
         await item.Children.map(async (elem) => {
           if (elem.Name != "Test") {
-            console.log(`[#] checking ${elem.Name}`);
+            console.log(`   [#]  Completing Chapter: ${elem.Name}`);
 
             elem.Children.map(async (ele) => {
               await this.engdis.setSucessTask(
@@ -150,32 +162,11 @@ class Main {
               );
             });
           } else {
-            console.log(`[#] checking ${elem.Name}`)
+            console.log(`   [#] Completing ${elem.Name}`)
             await this.setTest100Percent(item["Metadata"]["Code"], item["NodeId"], item["ParentNodeId"])
           }
         });
       });
-
-      // for (const item of courseTree["data"]) {
-      //   console.log(`\n[*] checking ( ${item.Name} )`);
-
-      //   for (const elem of item["Children"]) {
-      //     if (elem.Name != "Test") {
-      //       console.log(`[#] checking ${elem.Name}`);
-
-      //       for (const ele of elem["Children"]) {
-      //         await this.engdis.setSucessTask(
-      //           course.ParentNodeId,
-      //           ele.NodeId
-      //         );
-      //       }
-      //     } else {
-      //       console.log(`[#] checking ${elem.Name}`)
-      //       await this.setTest100Percent(item["Metadata"]["Code"], item["NodeId"], item["ParentNodeId"])
-      //     }
-      //   }
-      // }
-
     }
   }
 
