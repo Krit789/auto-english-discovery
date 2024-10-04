@@ -4,7 +4,7 @@ import PromptSync from "prompt-sync";
 import EngDis from "./lib/engdis.lib.js";
 
 const prompt = PromptSync({ sigint: true });
-const baseUrlFe1 = "https://edservices.engdis.com/api/";
+const baseUrlFe1 = "https://edwebservices2.engdis.com/api/";
 const baseUrlFe2 = "https://eduiwebservices20.engdis.com/api/";
 const baseUrlEFL = "https://edwebservices2.engdis.com/api/";
 class Main {
